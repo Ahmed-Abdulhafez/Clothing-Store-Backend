@@ -247,6 +247,8 @@ exports.getProfile = async (req, res) => {
 // update user profile
 exports.updateProfileUser = async (req, res) => {
   try {
+    console.log("Content-Type:", req.headers["content-type"]);
+    console.log("Request body:", req.body);
     const { password, email, ...updateData } = req.body;
     const cleanData = Object.fromEntries(
       Object.entries(updateData).filter(([_, v]) => v != null),
@@ -301,6 +303,70 @@ exports.getUserById = async (req, res) => {
       return res.status(400).json({ message: "Invalid user ID format" });
     }
     return res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// update user by id
+exports.updateUserById = async (req, res) => {
+  try {
+    const { username, email, role } = req.body || {};
+
+    const updateData = {};
+
+    if (username !== undefined) {
+      updateData.username = username;
+    }
+
+    if (email !== undefined) {
+      updateData.email = email;
+    }
+
+    if (role !== undefined) {
+      if (!["user", "admin"].includes(role)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid role",
+        });
+      }
+
+      updateData.role = role;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid fields provided",
+      });
+    }
+
+    const user = await userModel.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateData },
+      {
+        new: true,
+        runValidators: true,
+      },
+    ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: user,
+    });
+  } catch (error) {
+    console.error("Error updating user:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };
 

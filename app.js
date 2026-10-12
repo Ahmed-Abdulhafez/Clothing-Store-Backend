@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
-const connectDB = require("./utils/db");
+const connectDB = require("./config/db");
 const cookieParser = require("cookie-parser");
 
 const productRouter = require("./routes/product.router.cjs");
@@ -40,11 +40,21 @@ app.use("/api/users", userRouter);
 app.use("/api/categories", categoryRouter);
 app.use("/api/carts", cartsRouter);
 
+app.use((err, req, res, next) => {
+  console.error("UPLOAD / ROUTE ERROR:");
+  console.dir(err, { depth: null });
+
+  return res.status(err.statusCode || err.status || 500).json({
+    success: false,
+    message: err.message || "Upload failed",
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 
-// connectDB().then(() => {
-//   app.listen(PORT, () => {
-//     console.log(`🚀 Server is running on port ${PORT}`);
-//   });
-// });
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server is running on port ${PORT}`);
+  });
+});
 module.exports = app;

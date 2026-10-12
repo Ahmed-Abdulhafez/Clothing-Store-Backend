@@ -38,6 +38,12 @@ router.get(
   userController.getUserById,
 );
 
+router.put(
+  "/:id",
+  authMiddlware,
+  isAdmin,
+  userController.updateUserById,
+);
 // API Delete User
 router.delete(
   "/:id",

@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const productModel = require("../models/product.schema.cjs");
 const cloudinary = require("cloudinary").v2;
 
@@ -143,44 +144,113 @@ exports.createNewProduct = async (req, res) => {
 };
 
 // updated product
-exports.updatedProduct = async (req, res) => {
+exports.updateProduct = async (req, res) => {
+  const newFiles = Array.isArray(req.files) ? req.files : [];
+
   try {
-    let { title, desc, price, stock, brand, category, isFeatured } = req.body;
-    let updateData = { title, desc, price, stock, brand, category, isFeatured };
+    const { title, desc, price, stock, brand, category, isFeatured } = req.body;
+    const productId = req.params.id;
 
-    updateData = Object.fromEntries(
-      Object.entries(updateData).filter(([key, value]) => value !== undefined),
-    );
-    const product = await productModel.findById(req.params.id);
+    // 1. Validate product ID
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({
+        message: "Invalid product ID",
+      });
+    }
+
+    // 2. Find existing product
+    const product = await productModel.findById(productId);
     if (!product) {
-      return res.status(404).json({ message: "Product not found!" });
-    }
-
-    if (product.images && product.images.length > 0) {
-      console.log("Starting to delete old images...");
-
-      for (let image of product.images) {
-        const result = await cloudinary.uploader.destroy(image.public_id);
-
-        console.log(`Deletion result for image ${image.public_id}:`, result);
+      // تنظيف الصور الجديدة التي تم تحميلها إذا لم يتم العثور على المنتج
+      if (newFiles.length > 0) {
+        await Promise.allSettled(
+          newFiles.map((file) => cloudinary.uploader.destroy(file.filename)),
+        );
       }
+      return res.status(404).json({
+        message: "Product not found!",
+      });
     }
 
-    updateData.images = req.files.map((file) => {
-      return {
-        url: file.path,
-        public_id: file.filename,
-      };
-    });
+    // 3. Build update data
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (desc !== undefined) updateData.desc = desc;
+    if (price !== undefined) updateData.price = price;
+    if (stock !== undefined) updateData.stock = stock;
+    if (brand !== undefined) updateData.brand = brand;
+    if (category !== undefined) updateData.category = category;
+    if (isFeatured !== undefined) {
+      updateData.isFeatured = isFeatured === true || isFeatured === "true";
+    }
 
+    // 4. Handle images logic
+    const oldImages = Array.isArray(product.images) ? product.images : [];
+    let existingImageIds = [];
+
+    try {
+      existingImageIds = JSON.parse(req.body.existingImages ?? "[]");
+    } catch {
+      if (newFiles.length > 0) {
+        await Promise.allSettled(
+          newFiles.map((file) => cloudinary.uploader.destroy(file.filename)),
+        );
+      }
+      return res.status(400).json({
+        success: false,
+        message: "Invalid existingImages format",
+      });
+    }
+
+    if (!Array.isArray(existingImageIds)) {
+      if (newFiles.length > 0) {
+        await Promise.allSettled(
+          newFiles.map((file) => cloudinary.uploader.destroy(file.filename)),
+        );
+      }
+      return res.status(400).json({
+        success: false,
+        message: "existingImages must be an array",
+      });
+    }
+
+    const retainedImages = oldImages.filter(
+      (image) => image.public_id && existingImageIds.includes(image.public_id),
+    );
+
+    const uploadedImages = newFiles.map((file) => ({
+      url: file.path,
+      public_id: file.filename,
+    }));
+
+    updateData.images = [...retainedImages, ...uploadedImages];
+
+    // 5. Update product
     const updatedProduct = await productModel.findByIdAndUpdate(
-      req.params.id,
-      updateData,
+      productId,
+      { $set: updateData },
       { new: true, runValidators: true },
     );
 
     if (!updatedProduct) {
-      return res.status(404).json({ message: "Product not found!" });
+      return res.status(404).json({
+        message: "Product not found!",
+      });
+    }
+
+    // 6. Delete old Cloudinary images that were removed by the user
+    const retainedIds = new Set(retainedImages.map((image) => image.public_id));
+    const removedImages = oldImages.filter(
+      (image) => image.public_id && !retainedIds.has(image.public_id),
+    );
+
+    if (removedImages.length > 0) {
+      const deletePromises = removedImages.map((image) =>
+        cloudinary.uploader.destroy(image.public_id),
+      );
+      Promise.allSettled(deletePromises).catch((err) =>
+        console.error("Failed to delete removed images:", err),
+      );
     }
 
     return res.status(200).json({
@@ -188,8 +258,32 @@ exports.updatedProduct = async (req, res) => {
       data: updatedProduct,
     });
   } catch (error) {
-    console.log("Error updating Product:", error);
-    return res.status(500).json({ message: "Server Error" });
+    // Rollback: حذف الصور الجديدة المرفوعة إذا حدث خطأ في قاعدة البيانات
+    if (newFiles.length > 0) {
+      const rollbackPromises = newFiles.map((file) =>
+        cloudinary.uploader.destroy(file.filename),
+      );
+      await Promise.allSettled(rollbackPromises);
+    }
+
+    console.error("UPDATE PRODUCT ERROR:", error);
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        message: "Product validation failed",
+        errors: Object.values(error.errors).map((item) => item.message),
+      });
+    }
+
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        message: "Invalid product data",
+      });
+    }
+
+    return res.status(500).json({
+      message: "Server Error",
+    });
   }
 };
 

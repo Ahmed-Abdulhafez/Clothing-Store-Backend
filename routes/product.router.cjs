@@ -22,8 +22,8 @@ router.put(
   "/:id",
   authMiddlware,
   isAdmin,
-  upload.array("images", 5),
-  productController.updatedProduct,
+  upload.array("images", 10),
+  productController.updateProduct,
 );
 
 // get product By id
