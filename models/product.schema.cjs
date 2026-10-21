@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const schema = mongoose.Schema
+const schema = mongoose.Schema;
 
 const productSchema = new schema(
   {
@@ -34,7 +34,7 @@ const productSchema = new schema(
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
-      required: [true, "قسم المنتج مطلوب"], 
+      required: [true, "قسم المنتج مطلوب"],
     },
     images: [
       {
@@ -45,6 +45,15 @@ const productSchema = new schema(
     isFeatured: {
       type: Boolean,
       default: false,
+    },
+    showInProductSlider: {
+      type: Boolean,
+      default: false,
+    },
+
+    productSliderOrder: {
+      type: Number,
+      default: 0,
     },
     rating: {
       type: Number,
@@ -58,9 +67,9 @@ const productSchema = new schema(
       min: 0,
     },
   },
-  { 
-    timestamps: true 
-  } 
+  {
+    timestamps: true,
+  },
 );
 
 // تسريع عمليات البحث بالكلمات المفتاحية في عنوان المنتج

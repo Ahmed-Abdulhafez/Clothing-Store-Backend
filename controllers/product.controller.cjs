@@ -101,6 +101,7 @@ exports.createNewProduct = async (req, res) => {
       brand,
       stock,
       isFeatured,
+      showInProductSlider,
       rating,
       numReviews,
     } = req.body;
@@ -113,6 +114,7 @@ exports.createNewProduct = async (req, res) => {
       brand,
       stock: stock || 0,
       isFeatured: isFeatured || false,
+      showInProductSlider: showInProductSlider || false,
       rating: rating || 0,
       numReviews: numReviews || 0,
       images: uploadedImages,
@@ -148,7 +150,18 @@ exports.updateProduct = async (req, res) => {
   const newFiles = Array.isArray(req.files) ? req.files : [];
 
   try {
-    const { title, desc, price, stock, brand, category, isFeatured } = req.body;
+    const {
+      title,
+      desc,
+      price,
+      offerPrice, // 👈 أضفنا سعر العرض هنا ليتم تحديثه
+      stock,
+      brand,
+      category,
+      isFeatured,
+      showInProductSlider,
+    } = req.body;
+
     const productId = req.params.id;
 
     // 1. Validate product ID
@@ -161,7 +174,6 @@ exports.updateProduct = async (req, res) => {
     // 2. Find existing product
     const product = await productModel.findById(productId);
     if (!product) {
-      // تنظيف الصور الجديدة التي تم تحميلها إذا لم يتم العثور على المنتج
       if (newFiles.length > 0) {
         await Promise.allSettled(
           newFiles.map((file) => cloudinary.uploader.destroy(file.filename)),
@@ -177,20 +189,30 @@ exports.updateProduct = async (req, res) => {
     if (title !== undefined) updateData.title = title;
     if (desc !== undefined) updateData.desc = desc;
     if (price !== undefined) updateData.price = price;
+    if (offerPrice !== undefined) updateData.offerPrice = offerPrice; // 👈 حفظ سعر العرض
     if (stock !== undefined) updateData.stock = stock;
     if (brand !== undefined) updateData.brand = brand;
     if (category !== undefined) updateData.category = category;
+
     if (isFeatured !== undefined) {
       updateData.isFeatured = isFeatured === true || isFeatured === "true";
     }
+    if (showInProductSlider !== undefined) {
+      updateData.showInProductSlider =
+        showInProductSlider === true || showInProductSlider === "true";
+    }
 
-    // 4. Handle images logic
+    // 4. Handle images logic (معالجة آمنة لـ existingImages سواء كانت String أو Array)
     const oldImages = Array.isArray(product.images) ? product.images : [];
     let existingImageIds = [];
 
     try {
-      existingImageIds = JSON.parse(req.body.existingImages ?? "[]");
-    } catch {
+      if (Array.isArray(req.body.existingImages)) {
+        existingImageIds = req.body.existingImages;
+      } else if (typeof req.body.existingImages === "string") {
+        existingImageIds = JSON.parse(req.body.existingImages);
+      }
+    } catch (parseErr) {
       if (newFiles.length > 0) {
         await Promise.allSettled(
           newFiles.map((file) => cloudinary.uploader.destroy(file.filename)),
@@ -307,5 +329,27 @@ exports.deleteProduct = async (req, res) => {
   } catch (error) {
     console.log("Error deleting Product:", error);
     return res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// GET products slider
+exports.getSliderProducts = async (req, res) => {
+  try {
+    const sliderProducts = await productModel
+      .find({ showInProductSlider: true })
+      .sort({ productSliderOrder: 1 })
+      .limit(5);
+
+    return res.status(200).json({
+      success: true,
+      count: sliderProducts.length,
+      data: sliderProducts,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch slider products",
+      error: error.message,
+    });
   }
 };

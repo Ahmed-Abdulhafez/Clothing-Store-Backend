@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const upload = require("../middlewares/upload.middleware.cjs");
 
 const categoryController = require("../controllers/category.controller.cjs");
 const authMiddlware = require("../middlewares/auth.middleware.cjs");
@@ -10,6 +11,7 @@ router.post(
   "/",
   authMiddlware,
   isAdmin,
+  upload.array("images"),
   categoryController.createCategory,
 );
 
@@ -17,28 +19,13 @@ router.post(
 router.get("/", categoryController.getAllCategory);
 
 // update Category
-router.put(
-  "/:id",
-  authMiddlware,
-  isAdmin,
-  categoryController.updateCategory,
-);
+router.put("/:id", authMiddlware, isAdmin, upload.array("images"), categoryController.updateCategory);
 
 // get Category With Products
-router.get(
-  "/:id/products",
-  categoryController.getCategoryWithProducts,
-);
-
+router.get("/:id/products", categoryController.getCategoryWithProducts);
 
 // Get Category By Id
-router.get(
-  "/:id",
-  authMiddlware,
-  isAdmin,
-  categoryController.getCategoryById,
-);
-
+router.get("/:id", authMiddlware, isAdmin, categoryController.getCategoryById);
 
 // API Deleted Category
 router.delete(

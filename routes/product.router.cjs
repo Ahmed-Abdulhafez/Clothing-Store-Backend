@@ -17,6 +17,9 @@ router.post(
   productController.createNewProduct,
 );
 
+// GET products slider
+router.get("/slider", productController.getSliderProducts);
+
 // updated product
 router.put(
   "/:id",

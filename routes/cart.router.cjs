@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const cartController = require("../controllers/cart.controiier.cjs");
+const cartController = require("../controllers/cart.controller.cjs");
 const authMiddleware = require("../middlewares/auth.middleware.cjs");
 
 // API Add product to cart
