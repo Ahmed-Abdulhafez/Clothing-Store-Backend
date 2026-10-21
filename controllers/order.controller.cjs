@@ -1,6 +1,9 @@
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
 const orderModel = require("../models/order.schema.cjs");
 const cartModel = require("../models/cart.schema.cjs");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const productModel = require("../models/product.schema.cjs");
+
 
 // Get All Orders (Admin Only)
 exports.getAllOrder = async (req, res) => {
@@ -264,7 +267,6 @@ exports.webhookCheckout = async (req, res) => {
   let event;
 
   try {
-    // 1. التأكد إن الطلب جاي من سترايب فعلاً (تشفير أمني)
     event = stripe.webhooks.constructEvent(
       req.body,
       stripeSignature,
@@ -275,43 +277,52 @@ exports.webhookCheckout = async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // 2. لو الدفع تم بنجاح
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
 
-    // استخراج البيانات اللي كنا مخبينها في الجلسة
+    // 🛡️ التحقق لمنع تكرار الطلب
+    const existingOrder = await orderModel.findOne({
+      "paymentResult.id": session.id,
+    });
+    if (existingOrder) {
+      return res.status(200).json({ received: true });
+    }
+
     const cartId = session.client_reference_id;
-    const userEmail = session.customer_email;
     const shippingAddress = JSON.parse(session.metadata.shippingAddress);
 
     try {
-      // جلب السلة واليوزر
+      // جلب السلة فقط
       const cart = await cartModel.findById(cartId);
-      const user = await userModel.findOne({ email: userEmail });
 
-      if (cart && user) {
-        // إنشاء الأوردر
+      if (cart) {
+        // إنشاء الأوردر واستخدام cart.user مباشرة
         const newOrder = await orderModel.create({
-          user: user._id,
+          user: cart.user, 
           cartItems: cart.cartItems,
           shippingAddress: shippingAddress,
           totalOrderPrice: cart.totalCartPrice,
           paymentMethodType: "card",
           isPaid: true,
           paidAt: Date.now(),
+          paymentResult: {
+            id: session.id,
+            status: session.payment_status,
+            email_address: session.customer_email,
+          },
         });
 
         if (newOrder) {
-          // تحديث المخزن (تقليل الـ stock وزيادة الـ sold)
+          // تحديث المخزون
           const bulkOptions = cart.cartItems.map((item) => ({
             updateOne: {
-              filter: { _id: item.product }, 
+              filter: { _id: item.product },
               update: {
-                $inc: { stock: -item.quantity, sold: +item.quantity }, 
+                $inc: { stock: -item.quantity, sold: +item.quantity },
               },
             },
           }));
-          await productModel.bulkWrite(bulkOptions); 
+          await productModel.bulkWrite(bulkOptions);
 
           // مسح السلة
           await cartModel.findByIdAndDelete(cartId);
@@ -322,6 +333,5 @@ exports.webhookCheckout = async (req, res) => {
     }
   }
 
-  // 3. لازم نرد على سترايب بـ 200 عشان يعرف إننا استلمنا الرسالة وميبعتهاش تاني
   res.status(200).json({ received: true });
 };

@@ -77,7 +77,7 @@ exports.getLoggedUserCart = async (req, res) => {
       .populate("cartItems.product", "title price images stock");
     if (!cart) {
       return res
-        .status(404)
+        .status(200)
         .json({ message: "There is no cart for this user" });
     }
     return res
