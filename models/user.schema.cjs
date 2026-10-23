@@ -17,6 +17,13 @@ const userSchema = new schema({
     lowercase: true,
     trim: true,
   },
+
+  profileImg: [
+    {
+      url: { type: String, required: true },
+      public_id: { type: String, required: true },
+    },
+  ],
   password: { type: String, required: true },
   role: {
     type: String,

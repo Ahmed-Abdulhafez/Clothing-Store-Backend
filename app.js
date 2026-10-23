@@ -9,7 +9,7 @@ const productRouter = require("./routes/product.router.cjs");
 const userRouter = require("./routes/user.router.cjs");
 const categoryRouter = require("./routes/category.router");
 const cartsRouter = require("./routes/cart.router.cjs");
-
+const reviewsRouter = require("./routes/review.router.cjs");
 const allowedOrigins = [
   "http://localhost:3000",
 ];
@@ -39,6 +39,8 @@ app.use("/api/products", productRouter);
 app.use("/api/users", userRouter);
 app.use("/api/categories", categoryRouter);
 app.use("/api/carts", cartsRouter);
+app.use("/api/reviews", reviewsRouter);
+
 
 app.use((err, req, res, next) => {
   console.error("UPLOAD / ROUTE ERROR:");

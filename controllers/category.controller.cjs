@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const categoryModle = require("../models/category.schema.cjs");
+const productModel = require("../models/product.schema.cjs");
 const cloudinary = require("cloudinary").v2;
 
 // create Category
