@@ -12,9 +12,7 @@ const cartsRouter = require("./routes/cart.router.cjs");
 const reviewsRouter = require("./routes/review.router.cjs");
 const orderRouter = require("./routes/order.routsr.cjs");
 
-const allowedOrigins = [
-  "http://localhost:3000",
-];
+const allowedOrigins = ["http://localhost:3000"];
 
 app.use(
   cors({
@@ -33,8 +31,14 @@ app.use(
   }),
 );
 app.use(cookieParser());
-app.use(express.json());
-connectDB();
+// ⚠️ تخطي express.json فقط لمسار الـ Webhook الخاص بـ Stripe
+app.use((req, res, next) => {
+  if (req.originalUrl === "/api/orders/webhook") {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
 
 // ✅ المسارات
 app.use("/api/products", productRouter);

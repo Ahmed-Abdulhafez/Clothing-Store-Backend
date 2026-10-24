@@ -5,7 +5,14 @@ const orderController = require("../controllers/order.controller.cjs");
 const authMiddlware = require("../middlewares/auth.middleware.cjs");
 const { isAdmin } = require("../middlewares/isAdmin.middleware.cjs");
 
-//  Get All Orders
+
+router.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  orderController.webhookCheckout 
+);
+
+// Get All Orders
 router.get("/", authMiddlware, isAdmin, orderController.getAllOrder);
 
 // Get User Orders
@@ -15,8 +22,15 @@ router.get(
   orderController.getUserOrders,
 );
 
-// Get Specific Order By ID (الجديد - ولازم يكون تحت my-orders)
+// Get Specific Order By ID
 router.get("/:id", authMiddlware, orderController.getOrderById);
+
+// Stripe Checkout
+router.post(
+  "/checkout-session/:cartId",
+  authMiddlware,
+  orderController.createCheckoutSession,
+);
 
 // Create New Order
 router.post(
@@ -41,10 +55,4 @@ router.put(
   orderController.updateOrderToDelivered,
 );
 
-// Stripe Checkout
-router.post(
-  "/checkout-session/:cartId",
-  authMiddlware,
-  orderController.createCheckoutSession,
-);
 module.exports = router;
