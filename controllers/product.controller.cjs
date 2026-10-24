@@ -17,7 +17,7 @@ exports.getAllProducts = async (req, res) => {
     if (category) {
       queryArgs.category = category;
     }
-
+    
     if (minPrice || maxPrice) {
       queryArgs.price = {};
       if (minPrice) queryArgs.price.$gte = Number(minPrice);
@@ -97,6 +97,7 @@ exports.createNewProduct = async (req, res) => {
       title,
       desc,
       price,
+      offerPrice,
       category,
       brand,
       stock,
@@ -110,6 +111,7 @@ exports.createNewProduct = async (req, res) => {
       title,
       desc,
       price,
+      offerPrice,
       category,
       brand,
       stock: stock || 0,
@@ -154,7 +156,7 @@ exports.updateProduct = async (req, res) => {
       title,
       desc,
       price,
-      offerPrice, // 👈 أضفنا سعر العرض هنا ليتم تحديثه
+      offerPrice,
       stock,
       brand,
       category,

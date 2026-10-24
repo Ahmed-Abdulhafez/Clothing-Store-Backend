@@ -235,7 +235,6 @@ exports.createCheckoutSession = async (req, res) => {
     }));
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
       mode: "payment",
       customer_email: req.user.email,
       client_reference_id: cartId,
@@ -246,7 +245,7 @@ exports.createCheckoutSession = async (req, res) => {
 
       line_items: lineItems, // استخدام المنتجات الحقيقية
 
-      success_url: "http://localhost:5173/payment-success",
+      success_url: "http://localhost:3000/payment-success",
       cancel_url: "http://localhost:5173/cart",
     });
 
@@ -298,7 +297,7 @@ exports.webhookCheckout = async (req, res) => {
       if (cart) {
         // إنشاء الأوردر واستخدام cart.user مباشرة
         const newOrder = await orderModel.create({
-          user: cart.user, 
+          user: cart.user,
           cartItems: cart.cartItems,
           shippingAddress: shippingAddress,
           totalOrderPrice: cart.totalCartPrice,

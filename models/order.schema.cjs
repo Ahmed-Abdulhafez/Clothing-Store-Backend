@@ -53,3 +53,6 @@ const orderSchema = new schema(
   },
   { timestamps: true },
 );
+
+
+module.exports = mongoose.model("Order", orderSchema);

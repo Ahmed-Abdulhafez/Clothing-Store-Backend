@@ -6,28 +6,28 @@ const authMiddlware = require("../middlewares/auth.middleware.cjs");
 const { isAdmin } = require("../middlewares/isAdmin.middleware.cjs");
 
 //  Get All Orders
-router.get("/api/orders", authMiddlware, isAdmin, orderController.getAllOrder);
+router.get("/", authMiddlware, isAdmin, orderController.getAllOrder);
 
 // Get User Orders
 router.get(
-  "/api/orders/my-orders",
+  "/my-orders",
   authMiddlware,
   orderController.getUserOrders,
 );
 
 // Get Specific Order By ID (الجديد - ولازم يكون تحت my-orders)
-router.get("/api/orders/:id", authMiddlware, orderController.getOrderById);
+router.get("/:id", authMiddlware, orderController.getOrderById);
 
 // Create New Order
 router.post(
-  "/api/orders/:cartId",
+  "/:cartId",
   authMiddlware,
   orderController.createNewOrder,
 );
 
 // Update Order to Paid
 router.put(
-  "/api/orders/:id/pay",
+  "/:id/pay",
   authMiddlware,
   isAdmin,
   orderController.updateOrderToPaid,
@@ -35,7 +35,7 @@ router.put(
 
 // Update Order to Delivered
 router.put(
-  "/api/orders/:id/deliver",
+  "/:id/deliver",
   authMiddlware,
   isAdmin,
   orderController.updateOrderToDelivered,
@@ -43,7 +43,7 @@ router.put(
 
 // Stripe Checkout
 router.post(
-  "/api/orders/checkout-session/:cartId",
+  "/checkout-session/:cartId",
   authMiddlware,
   orderController.createCheckoutSession,
 );

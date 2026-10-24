@@ -18,7 +18,13 @@ const productSchema = new schema(
       type: Number,
       required: [true, "السعر مطلوب"],
       default: 0,
-      min: [0, "السعر لا يمكن أن يكون أقل من 0"], // حماية من القيم السلبية
+      min: [0, "السعر لا يمكن أن يكون أقل من 0"], 
+    },
+    offerPrice: {
+      type: Number,
+      required: [true, "السعر مطلوب"],
+      default: 0,
+      min: [0, "السعر لا يمكن أن يكون أقل من 0"], 
     },
     brand: {
       type: String,
