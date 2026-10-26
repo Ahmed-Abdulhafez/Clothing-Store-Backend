@@ -12,7 +12,10 @@ const cartsRouter = require("./routes/cart.router.cjs");
 const reviewsRouter = require("./routes/review.router.cjs");
 const orderRouter = require("./routes/order.routsr.cjs");
 
-const allowedOrigins = ["http://localhost:3000"];
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://clothing-store-frontend-iota.vercel.app"
+];
 
 app.use(
   cors({
