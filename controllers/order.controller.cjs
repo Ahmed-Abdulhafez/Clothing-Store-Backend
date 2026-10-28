@@ -4,7 +4,6 @@ const orderModel = require("../models/order.schema.cjs");
 const cartModel = require("../models/cart.schema.cjs");
 const productModel = require("../models/product.schema.cjs");
 
-
 // Get All Orders (Admin Only)
 exports.getAllOrder = async (req, res) => {
   try {
@@ -247,6 +246,9 @@ exports.createCheckoutSession = async (req, res) => {
 
       success_url: "http://localhost:3000/payment-success",
       cancel_url: "http://localhost:5173/cart",
+      // success_url:
+      //   "https://clothing-store-frontend-iota.vercel.app/payment-success",
+      // cancel_url: "https://clothing-store-frontend-iota.vercel.app/cart",
     });
 
     return res.status(200).json({

@@ -8,7 +8,7 @@ const orderSchema = new schema(
       ref: "User",
       required: [true, "Order must belong to a user"],
     },
-    
+
     cartItems: [
       {
         product: {
@@ -19,11 +19,13 @@ const orderSchema = new schema(
         price: Number, // 💡 تريكة مهمة: بنسجل السعر هنا عشان لو سعر الكتاب اتغير بعدين، الفاتورة دي ماتتأثرش
       },
     ],
-    
+
     shippingAddress: {
       details: String,
       phone: String,
       city: String,
+      fullName: String,
+      address: String,
     },
 
     totalOrderPrice: {
@@ -49,10 +51,8 @@ const orderSchema = new schema(
     },
 
     deliveredAt: Date, // تاريخ التوصيل
-
   },
   { timestamps: true },
 );
-
 
 module.exports = mongoose.model("Order", orderSchema);
