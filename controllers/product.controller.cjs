@@ -6,18 +6,26 @@ const cloudinary = require("cloudinary").v2;
 exports.getAllProducts = async (req, res) => {
   try {
     const { search, category, minPrice, maxPrice, page, limit } = req.query;
-    let queryArgs = {};
-    if (search) {
+
+    const queryArgs = {};
+
+    if (search?.trim()) {
+      const searchRegex = new RegExp(
+        search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        "i",
+      );
+
       queryArgs.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { author: { $regex: search, $options: "i" } },
+        { title: searchRegex },
+        { brand: searchRegex },
+        { desc: searchRegex },
       ];
     }
 
     if (category) {
       queryArgs.category = category;
     }
-    
+
     if (minPrice || maxPrice) {
       queryArgs.price = {};
       if (minPrice) queryArgs.price.$gte = Number(minPrice);
